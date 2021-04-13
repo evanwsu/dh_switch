@@ -16,7 +16,7 @@ class DHSwitch extends StatefulWidget {
   final bool value;
 
   /// 状态改变回调，未设置不会响应手势
-  final ValueChanged<bool> onChanged;
+  final ValueChanged<bool>? onChanged;
 
   /// 开启状态thumb颜色
   final Color activeThumbColor;
@@ -40,21 +40,19 @@ class DHSwitch extends StatefulWidget {
   /// 是否可用
   final bool disabled;
 
-  DHSwitch(
-      {Key key,
-      @required this.value,
-      @required this.onChanged,
-      this.disabled = false,
-      this.activeThumbColor = const Color(0xFFFFFFFF),
-      this.inactiveThumbColor = const Color(0xFFFFFFFF),
-      this.activeTrackColor = const Color(0xFF47D7EC),
-      this.inactiveTrackColor = const Color(0xFFF0F0F0),
-      this.borderColor = const Color(0x1A000000),
-      this.switchSize = const SwitchSize(),
-      this.borderStyle = BorderStyle.solid})
-      : assert(switchSize != null),
-        assert(value != null),
-        super(key: key);
+  DHSwitch({
+    Key? key,
+    required this.value,
+    required this.onChanged,
+    this.disabled = false,
+    this.activeThumbColor = const Color(0xFFFFFFFF),
+    this.inactiveThumbColor = const Color(0xFFFFFFFF),
+    this.activeTrackColor = const Color(0xFF47D7EC),
+    this.inactiveTrackColor = const Color(0xFFF0F0F0),
+    this.borderColor = const Color(0x1A000000),
+    this.switchSize = const SwitchSize(),
+    this.borderStyle = BorderStyle.solid,
+  }) : super(key: key);
 
   @override
   _DHSwitchState createState() => _DHSwitchState();
@@ -62,8 +60,8 @@ class DHSwitch extends StatefulWidget {
 
 class _DHSwitchState extends State<DHSwitch>
     with SingleTickerProviderStateMixin {
-  AnimationController _positionController;
-  Animation<Alignment> _circleAnimation;
+  late AnimationController _positionController;
+  late Animation<Alignment> _circleAnimation;
 
   @override
   void initState() {
@@ -99,7 +97,7 @@ class _DHSwitchState extends State<DHSwitch>
 
     return AnimatedBuilder(
       animation: _positionController,
-      builder: (BuildContext context, Widget child) {
+      builder: (BuildContext context, Widget? child) {
         return GestureDetector(
           onTap: widget.disabled ? null : _handleTap,
           child: Container(
@@ -145,9 +143,9 @@ class _DHSwitchState extends State<DHSwitch>
   void _handlePositionStateChanged(AnimationStatus status) {
     if (isInteractive) {
       if (status == AnimationStatus.completed && widget.value == false) {
-        widget.onChanged(true);
+        widget.onChanged?.call(true);
       } else if (status == AnimationStatus.dismissed && widget.value != false) {
-        widget.onChanged(false);
+        widget.onChanged?.call(false);
       }
     }
   }
@@ -175,9 +173,12 @@ class SwitchSize {
         _borderWidth = borderWidth ?? _defaultBorderWidth;
 
   double get trackWidth => _trackWidth;
+
   double get trackHeight => _trackHeight;
+
   double get borderWidth => _borderWidth;
 
   double get margin => (trackHeight - trackHeight / _ratio) / 2;
+
   double get thumbSize => trackHeight - margin * 2;
 }

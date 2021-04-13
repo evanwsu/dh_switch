@@ -6,7 +6,6 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -21,7 +20,7 @@ class MyApp extends StatelessWidget {
 }
 
 class SwitchPage extends StatefulWidget {
-  SwitchPage({Key key, this.title}) : super(key: key);
+  SwitchPage({Key? key, required this.title}) : super(key: key);
 
   final String title;
 
@@ -30,44 +29,44 @@ class SwitchPage extends StatefulWidget {
 }
 
 class _SwitchPageState extends State<SwitchPage> {
-
   bool value = false;
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: <Widget>[
-            SizedBox(height: 20,),
-            DHSwitch(
-                value: value,
-                activeTrackColor: Colors.lightBlueAccent,
-                inactiveTrackColor: Colors.lightBlue,
-                borderColor: Colors.redAccent,
-                onChanged: (value){
-                  setState(() => this.value = value);
-                },
-                borderStyle: BorderStyle.solid
-            ),
-            SizedBox(height: 20,),
-            DHSwitch(
-                value: value,
-                activeTrackColor: Colors.lightGreenAccent,
-                inactiveTrackColor: Colors.lightGreen,
-                borderColor: Colors.yellowAccent,
-                onChanged: (value){
-                  setState(() => this.value = value);
-                },
-                borderStyle: BorderStyle.none
-            )
-          ],
+        appBar: AppBar(
+          title: Text(widget.title),
         ),
-      )
-    );
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: <Widget>[
+              SizedBox(
+                height: 20,
+              ),
+              DHSwitch(
+                  value: value,
+                  activeTrackColor: Colors.lightBlueAccent,
+                  inactiveTrackColor: Colors.lightBlue,
+                  borderColor: Colors.redAccent,
+                  onChanged: (value) {
+                    setState(() => this.value = value);
+                  },
+                  borderStyle: BorderStyle.solid),
+              SizedBox(
+                height: 20,
+              ),
+              DHSwitch(
+                  value: value,
+                  activeTrackColor: Colors.lightGreenAccent,
+                  inactiveTrackColor: Colors.lightGreen,
+                  borderColor: Colors.yellowAccent,
+                  onChanged: (value) {
+                    setState(() => this.value = value);
+                  },
+                  borderStyle: BorderStyle.none)
+            ],
+          ),
+        ));
   }
 }
