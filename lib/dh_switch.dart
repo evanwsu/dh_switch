@@ -32,6 +32,8 @@ class DHSwitch extends StatefulWidget {
 
   /// 边框颜色
   final Color borderColor;
+
+  /// 自定义switch尺寸
   final SwitchSize switchSize;
 
   /// 边框样式， BorderStyle.none不设置边框
@@ -71,14 +73,11 @@ class _DHSwitchState extends State<DHSwitch>
       duration: _sToggleDuration,
       value: value,
     );
-    CurvedAnimation curvedAnimation = CurvedAnimation(
-      parent: _positionController,
-      curve: Curves.linear,
-    );
-    _circleAnimation =
-        AlignmentTween(begin: Alignment.centerLeft, end: Alignment.centerRight)
-            .animate(curvedAnimation)
-              ..addStatusListener(_handlePositionStateChanged);
+    _circleAnimation = AlignmentTween(
+            begin: Alignment.centerLeft, end: Alignment.centerRight)
+        .animate(
+            CurvedAnimation(parent: _positionController, curve: Curves.linear))
+      ..addStatusListener(_handlePositionStateChanged);
   }
 
   @override
