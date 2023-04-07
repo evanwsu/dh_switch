@@ -45,7 +45,7 @@ class DHSwitch extends StatefulWidget {
   DHSwitch({
     Key? key,
     required this.value,
-    required this.onChanged,
+    this.onChanged,
     this.disabled = false,
     this.activeThumbColor = const Color(0xFFFFFFFF),
     this.inactiveThumbColor = const Color(0xFFFFFFFF),
@@ -96,62 +96,60 @@ class _DHSwitchState extends State<DHSwitch>
 
     return AnimatedBuilder(
       animation: _positionController,
-      builder: (BuildContext context, Widget? child) {
-        return GestureDetector(
-          onTap: widget.disabled ? null : _handleTap,
-          child: Container(
-            width: switchSize.trackWidth,
-            height: switchSize.trackHeight,
-            alignment: _circleAnimation.value,
-            padding: EdgeInsets.symmetric(horizontal: switchSize.margin),
+      builder: (BuildContext context, Widget? _) {
+        Widget current = Container(
+          width: switchSize.trackWidth,
+          height: switchSize.trackHeight,
+          alignment: _circleAnimation.value,
+          padding: EdgeInsets.symmetric(horizontal: switchSize.margin),
+          decoration: ShapeDecoration(
+              shape: RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(switchSize.trackHeight / 2),
+                  side: borderSide),
+              color: _circleAnimation.value == Alignment.centerLeft
+                  ? widget.inactiveTrackColor
+                  : widget.activeTrackColor),
+          child: DecoratedBox(
             decoration: ShapeDecoration(
-                shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(switchSize.trackHeight / 2),
-                    side: borderSide),
+                shape: CircleBorder(side: borderSide),
                 color: _circleAnimation.value == Alignment.centerLeft
-                    ? widget.inactiveTrackColor
-                    : widget.activeTrackColor),
-            child: DecoratedBox(
-              decoration: ShapeDecoration(
-                  shape: CircleBorder(side: borderSide),
-                  color: _circleAnimation.value == Alignment.centerLeft
-                      ? widget.inactiveThumbColor
-                      : widget.activeThumbColor),
-              child: SizedBox(
-                width: switchSize.thumbSize,
-                height: switchSize.thumbSize,
-              ),
+                    ? widget.inactiveThumbColor
+                    : widget.activeThumbColor),
+            child: SizedBox(
+              width: switchSize.thumbSize,
+              height: switchSize.thumbSize,
             ),
           ),
         );
+        if (!widget.disabled) {
+          current = GestureDetector(
+            onTap: _handleTap,
+            child: current,
+          );
+        }
+        return current;
       },
     );
   }
 
   void _handleTap() {
-    if (isInteractive) {
-      if (_positionController.isCompleted) {
-        _positionController.reverse();
-      } else if (_positionController.isDismissed) {
-        _positionController.forward();
-      }
+    if (_positionController.isCompleted) {
+      _positionController.reverse();
+    } else if (_positionController.isDismissed) {
+      _positionController.forward();
     }
   }
 
   void _handlePositionStateChanged(AnimationStatus status) {
-    if (isInteractive) {
-      if (status == AnimationStatus.completed && widget.value == false) {
-        widget.onChanged?.call(true);
-      } else if (status == AnimationStatus.dismissed && widget.value != false) {
-        widget.onChanged?.call(false);
-      }
+    if (status == AnimationStatus.completed && !widget.value) {
+      widget.onChanged?.call(true);
+    } else if (status == AnimationStatus.dismissed && widget.value) {
+      widget.onChanged?.call(false);
     }
   }
 
-  bool get isInteractive => widget.onChanged != null;
-
-  double get value => widget.value == false ? 0.0 : 1.0;
+  double get value => widget.value ? 1.0 : 0.0;
 
   @override
   void dispose() {

@@ -1,4 +1,4 @@
-# dh_switch[![dh_switch](https://img.shields.io/badge/pub-1.0.0-brightgreen.svg)](https://pub.dev/packages/dh_switch)
+# dh_switch[![dh_switch](https://img.shields.io/badge/pub-1.0.1-brightgreen.svg)](https://pub.dev/packages/dh_switch)
 
 A Simple Switch package. 
 

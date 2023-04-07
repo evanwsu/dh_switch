@@ -1,3 +1,6 @@
+## [1.0.1] - 2023.4.7
+* Remove onChanged required field
+
 ## [1.0.0] - 2022.12.21
 * Update ReadMe
 
