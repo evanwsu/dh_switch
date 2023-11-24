@@ -42,6 +42,9 @@ class DHSwitch extends StatefulWidget {
   /// 是否可用
   final bool disabled;
 
+  /// 动画状态改变
+  final AnimationStatusListener? onAnimationStatusChanged;
+
   DHSwitch({
     Key? key,
     required this.value,
@@ -54,6 +57,7 @@ class DHSwitch extends StatefulWidget {
     this.borderColor = const Color(0x1A000000),
     this.switchSize = const SwitchSize(),
     this.borderStyle = BorderStyle.solid,
+    this.onAnimationStatusChanged,
   }) : super(key: key);
 
   @override
@@ -142,6 +146,7 @@ class _DHSwitchState extends State<DHSwitch>
   }
 
   void _handlePositionStateChanged(AnimationStatus status) {
+    widget.onAnimationStatusChanged?.call(status);
     if (status == AnimationStatus.completed && !widget.value) {
       widget.onChanged?.call(true);
     } else if (status == AnimationStatus.dismissed && widget.value) {

@@ -1,3 +1,6 @@
+## [1.0.2] - 2023.11.24
+* Added an animation state change callback
+
 ## [1.0.1] - 2023.4.7
 * Remove onChanged required field
 
