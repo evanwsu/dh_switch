@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 
 ///@author Evan
 ///@since 2019-11-04
@@ -45,6 +44,12 @@ class DHSwitch extends StatefulWidget {
   /// 动画状态改变
   final AnimationStatusListener? onAnimationStatusChanged;
 
+  /// 节流时间，在节流时间内忽略交互
+  final Duration? throttleDuration;
+
+  /// 是否第一时间渲染（动画）；为 false 时仅触发 onChanged
+  final bool isFirstRender;
+
   DHSwitch({
     Key? key,
     required this.value,
@@ -58,6 +63,8 @@ class DHSwitch extends StatefulWidget {
     this.switchSize = const SwitchSize(),
     this.borderStyle = BorderStyle.solid,
     this.onAnimationStatusChanged,
+    this.throttleDuration,
+    this.isFirstRender = true,
   }) : super(key: key);
 
   @override
@@ -68,6 +75,7 @@ class _DHSwitchState extends State<DHSwitch>
     with SingleTickerProviderStateMixin {
   late AnimationController _positionController;
   late Animation<Alignment> _circleAnimation;
+  DateTime? _lastTapTime;
 
   @override
   void initState() {
@@ -92,15 +100,17 @@ class _DHSwitchState extends State<DHSwitch>
 
   @override
   Widget build(BuildContext context) {
-    SwitchSize switchSize = widget.switchSize;
-    final BorderSide borderSide = BorderSide(
-        style: widget.borderStyle,
-        color: widget.borderColor,
-        width: switchSize.borderWidth);
+    final switchSize = widget.switchSize;
+    final borderSide = BorderSide(
+      style: widget.borderStyle,
+      color: widget.borderColor,
+      width: switchSize.borderWidth,
+    );
 
     return AnimatedBuilder(
       animation: _positionController,
       builder: (BuildContext context, Widget? _) {
+        final isActive = _circleAnimation.value == Alignment.centerRight;
         Widget current = Container(
           width: switchSize.trackWidth,
           height: switchSize.trackHeight,
@@ -111,15 +121,15 @@ class _DHSwitchState extends State<DHSwitch>
                   borderRadius:
                       BorderRadius.circular(switchSize.trackHeight / 2),
                   side: borderSide),
-              color: _circleAnimation.value == Alignment.centerLeft
-                  ? widget.inactiveTrackColor
-                  : widget.activeTrackColor),
+              color: isActive
+                  ? widget.activeTrackColor
+                  : widget.inactiveTrackColor),
           child: DecoratedBox(
             decoration: ShapeDecoration(
                 shape: CircleBorder(side: borderSide),
-                color: _circleAnimation.value == Alignment.centerLeft
-                    ? widget.inactiveThumbColor
-                    : widget.activeThumbColor),
+                color: isActive
+                    ? widget.activeThumbColor
+                    : widget.inactiveThumbColor),
             child: SizedBox(
               width: switchSize.thumbSize,
               height: switchSize.thumbSize,
@@ -138,14 +148,45 @@ class _DHSwitchState extends State<DHSwitch>
   }
 
   void _handleTap() {
-    if (_positionController.isCompleted) {
-      _positionController.reverse();
-    } else if (_positionController.isDismissed) {
-      _positionController.forward();
+    if (_shouldThrottle()) {
+      return;
+    }
+
+    if (widget.isFirstRender) {
+      if (_positionController.isCompleted) {
+        _positionController.reverse();
+      } else if (_positionController.isDismissed) {
+        _positionController.forward();
+      }
+    } else {
+      // 不立即渲染，仅回调，等待外部更新 value 后触发同步
+      final nextValue = !widget.value;
+      widget.onChanged?.call(nextValue);
     }
   }
 
+  /// 检查是否应该节流，返回 true 表示应该忽略本次交互
+  bool _shouldThrottle() {
+    final throttleDuration = widget.throttleDuration;
+    if (throttleDuration == null) {
+      return false;
+    }
+
+    final now = DateTime.now();
+    if (_lastTapTime != null) {
+      final timeSinceLastTap = now.difference(_lastTapTime!);
+      if (timeSinceLastTap < throttleDuration) {
+        return true;
+      }
+    }
+    _lastTapTime = now;
+    return false;
+  }
+
   void _handlePositionStateChanged(AnimationStatus status) {
+    if (!widget.isFirstRender) {
+      return;
+    }
     widget.onAnimationStatusChanged?.call(status);
     if (status == AnimationStatus.completed && !widget.value) {
       widget.onChanged?.call(true);
@@ -169,8 +210,11 @@ class SwitchSize {
   final double _trackWidth;
   final double _trackHeight;
 
-  const SwitchSize({width, height, borderWidth})
-      : _trackWidth = width ?? _defaultWidth,
+  const SwitchSize({
+    double? width,
+    double? height,
+    double? borderWidth,
+  })  : _trackWidth = width ?? _defaultWidth,
         _trackHeight = height ?? _defaultHeight,
         _borderWidth = borderWidth ?? _defaultBorderWidth;
 
