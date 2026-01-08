@@ -1,3 +1,6 @@
+## [1.0.3] - 2026.1.8
+* Added throttleDuration and isFirstRender 
+
 ## [1.0.2] - 2023.11.24
 * Added an animation state change callback
 
