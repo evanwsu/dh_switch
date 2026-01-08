@@ -62,6 +62,8 @@ class _SwitchPageState extends State<SwitchPage> {
                   onChanged: (value) {
                     setState(() => this.value = value);
                   },
+                  throttleDuration: Duration(seconds: 1),
+                  isFirstRender: false,
                   borderStyle: BorderStyle.none)
             ],
           ),
