@@ -1,3 +1,9 @@
+## 1.0.4 - 2026-09-06
+* Call `onChanged` immediately when an interaction is accepted.
+* Keep visual, animation, disabled, and throttle states consistent.
+* Animate track and thumb colors during transitions.
+* Add widget tests for switch state transitions.
+
 ## [1.0.3] - 2026.1.8
 * Added throttleDuration and isFirstRender 
 

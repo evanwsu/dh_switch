@@ -2,10 +2,12 @@ import 'package:dh_switch/dh_switch.dart';
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -14,13 +16,13 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: SwitchPage(title: 'DHSwitch Demo'),
+      home: const SwitchPage(title: 'DHSwitch Demo'),
     );
   }
 }
 
 class SwitchPage extends StatefulWidget {
-  SwitchPage({Key? key, required this.title}) : super(key: key);
+  const SwitchPage({Key? key, required this.title}) : super(key: key);
 
   final String title;
 
@@ -39,21 +41,21 @@ class _SwitchPageState extends State<SwitchPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
             children: <Widget>[
-              SizedBox(height: 80),
-              Text("BorderStyle.solid"),
+              const SizedBox(height: 80),
+              const Text("BorderStyle.solid"),
               DHSwitch(
                   value: value,
                   activeTrackColor: Colors.lightBlueAccent,
                   inactiveTrackColor: Colors.lightBlue,
                   borderColor: Colors.redAccent,
-                  switchSize:
-                      SwitchSize(width: 44.0, height: 24.0, borderWidth: 2.0),
+                  switchSize: const SwitchSize(
+                      width: 44.0, height: 24.0, borderWidth: 2.0),
                   onChanged: (value) {
                     setState(() => this.value = value);
                   },
                   borderStyle: BorderStyle.solid),
-              SizedBox(height: 30),
-              Text("BorderStyle.none"),
+              const SizedBox(height: 30),
+              const Text("BorderStyle.none"),
               DHSwitch(
                   value: value,
                   activeTrackColor: Colors.lightGreenAccent,
@@ -62,7 +64,7 @@ class _SwitchPageState extends State<SwitchPage> {
                   onChanged: (value) {
                     setState(() => this.value = value);
                   },
-                  throttleDuration: Duration(seconds: 1),
+                  throttleDuration: const Duration(seconds: 1),
                   isFirstRender: false,
                   borderStyle: BorderStyle.none)
             ],

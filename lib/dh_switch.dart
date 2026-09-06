@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 ///@author Evan
@@ -14,7 +16,7 @@ class DHSwitch extends StatefulWidget {
   /// 当前状态值
   final bool value;
 
-  /// 状态改变回调，未设置不会响应手势
+  /// 状态改变回调，点击触发后立即调用；未设置时仍响应手势
   final ValueChanged<bool>? onChanged;
 
   /// 开启状态thumb颜色
@@ -47,7 +49,7 @@ class DHSwitch extends StatefulWidget {
   /// 节流时间，在节流时间内忽略交互
   final Duration? throttleDuration;
 
-  /// 是否第一时间渲染（动画）；为 false 时仅触发 onChanged
+  /// 是否在状态切换时播放动画；为 false 时立即切换视觉状态
   final bool isFirstRender;
 
   DHSwitch({
@@ -65,7 +67,11 @@ class DHSwitch extends StatefulWidget {
     this.onAnimationStatusChanged,
     this.throttleDuration,
     this.isFirstRender = true,
-  }) : super(key: key);
+  })  : assert(
+          throttleDuration == null || !throttleDuration.isNegative,
+          'throttleDuration must not be negative.',
+        ),
+        super(key: key);
 
   @override
   _DHSwitchState createState() => _DHSwitchState();
@@ -75,11 +81,15 @@ class _DHSwitchState extends State<DHSwitch>
     with SingleTickerProviderStateMixin {
   late AnimationController _positionController;
   late Animation<Alignment> _circleAnimation;
-  DateTime? _lastTapTime;
+  late bool _visualValue;
+  bool? _animationTarget;
+  Timer? _throttleTimer;
+  bool _isThrottled = false;
 
   @override
   void initState() {
     super.initState();
+    _visualValue = widget.value;
     _positionController = AnimationController(
       vsync: this,
       duration: _sToggleDuration,
@@ -95,7 +105,16 @@ class _DHSwitchState extends State<DHSwitch>
   @override
   void didUpdateWidget(DHSwitch oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _positionController.value = value;
+    if (oldWidget.value != widget.value) {
+      _visualValue = widget.value;
+      if (_animationTarget != widget.value) {
+        _updateVisualState(widget.value, animate: widget.isFirstRender);
+      }
+    } else if (oldWidget.isFirstRender &&
+        !widget.isFirstRender &&
+        _positionController.isAnimating) {
+      _updateVisualState(_visualValue, animate: false);
+    }
   }
 
   @override
@@ -110,7 +129,7 @@ class _DHSwitchState extends State<DHSwitch>
     return AnimatedBuilder(
       animation: _positionController,
       builder: (BuildContext context, Widget? _) {
-        final isActive = _circleAnimation.value == Alignment.centerRight;
+        final progress = _positionController.value;
         Widget current = Container(
           width: switchSize.trackWidth,
           height: switchSize.trackHeight,
@@ -121,15 +140,19 @@ class _DHSwitchState extends State<DHSwitch>
                   borderRadius:
                       BorderRadius.circular(switchSize.trackHeight / 2),
                   side: borderSide),
-              color: isActive
-                  ? widget.activeTrackColor
-                  : widget.inactiveTrackColor),
+              color: Color.lerp(
+                widget.inactiveTrackColor,
+                widget.activeTrackColor,
+                progress,
+              )),
           child: DecoratedBox(
             decoration: ShapeDecoration(
                 shape: CircleBorder(side: borderSide),
-                color: isActive
-                    ? widget.activeThumbColor
-                    : widget.inactiveThumbColor),
+                color: Color.lerp(
+                  widget.inactiveThumbColor,
+                  widget.activeThumbColor,
+                  progress,
+                )),
             child: SizedBox(
               width: switchSize.thumbSize,
               height: switchSize.thumbSize,
@@ -148,57 +171,79 @@ class _DHSwitchState extends State<DHSwitch>
   }
 
   void _handleTap() {
-    if (_shouldThrottle()) {
+    if (widget.disabled ||
+        _positionController.isAnimating ||
+        _shouldThrottle()) {
       return;
     }
 
-    if (widget.isFirstRender) {
-      if (_positionController.isCompleted) {
-        _positionController.reverse();
-      } else if (_positionController.isDismissed) {
-        _positionController.forward();
-      }
-    } else {
-      // 不立即渲染，仅回调，等待外部更新 value 后触发同步
-      final nextValue = !widget.value;
-      widget.onChanged?.call(nextValue);
+    final nextValue = !_visualValue;
+    _visualValue = nextValue;
+
+    // onChanged 表示用户已经触发切换，不等待视觉动画完成。
+    widget.onChanged?.call(nextValue);
+    if (!mounted) {
+      return;
     }
+    _updateVisualState(nextValue, animate: widget.isFirstRender);
   }
 
   /// 检查是否应该节流，返回 true 表示应该忽略本次交互
   bool _shouldThrottle() {
     final throttleDuration = widget.throttleDuration;
-    if (throttleDuration == null) {
+    if (throttleDuration == null || throttleDuration == Duration.zero) {
       return false;
     }
 
-    final now = DateTime.now();
-    if (_lastTapTime != null) {
-      final timeSinceLastTap = now.difference(_lastTapTime!);
-      if (timeSinceLastTap < throttleDuration) {
-        return true;
-      }
+    if (_isThrottled) {
+      return true;
     }
-    _lastTapTime = now;
+
+    _isThrottled = true;
+    _throttleTimer?.cancel();
+    _throttleTimer = Timer(throttleDuration, () {
+      _isThrottled = false;
+    });
     return false;
   }
 
+  void _updateVisualState(bool targetValue, {required bool animate}) {
+    final target = targetValue ? 1.0 : 0.0;
+    if (_positionController.value == target) {
+      _animationTarget = null;
+      return;
+    }
+
+    if (!animate) {
+      _animationTarget = null;
+      _positionController.value = target;
+      return;
+    }
+
+    _animationTarget = targetValue;
+    if (targetValue) {
+      _positionController.forward();
+    } else {
+      _positionController.reverse();
+    }
+  }
+
   void _handlePositionStateChanged(AnimationStatus status) {
+    if (status == AnimationStatus.completed ||
+        status == AnimationStatus.dismissed) {
+      _animationTarget = null;
+    }
     if (!widget.isFirstRender) {
       return;
     }
     widget.onAnimationStatusChanged?.call(status);
-    if (status == AnimationStatus.completed && !widget.value) {
-      widget.onChanged?.call(true);
-    } else if (status == AnimationStatus.dismissed && widget.value) {
-      widget.onChanged?.call(false);
-    }
   }
 
   double get value => widget.value ? 1.0 : 0.0;
 
   @override
   void dispose() {
+    _throttleTimer?.cancel();
     _positionController.dispose();
     super.dispose();
   }
